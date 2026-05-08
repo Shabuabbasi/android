@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.remind_ai">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="RemindAI"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.RemindAI">
+
+        <activity
+            android:name="com.example.remind_ai.stage1.Stage1Activity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.example.remind_ai.stage1.AddReminderS1Activity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.example.remind_ai.stage2.Stage2DashboardActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.example.remind_ai.Stage3.Stage3PatientDashboardActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.SplashActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".activities.RegisterActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.LoginActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.RoleSelectionActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.StageDetectionActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.CaregiverConnectActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.CaregiverHomeActivity"
+            android:exported="false" />
+        <receiver
+            android:name="com.example.remind_ai.stage1.ReminderReceiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".stage1.VoiceAssistantActivity"
+            android:exported="true" />
+
+        <receiver
+            android:name=".stage1.ChecklistReminderReceiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".stage1.RoutineChecklistActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".stage1.QuickThoughtsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".stage1.MyJournalActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".stage1.PersonalChatbotS1Activity"
+            android:exported="false" />
+
+
+
+    </application>
+
+</manifest>

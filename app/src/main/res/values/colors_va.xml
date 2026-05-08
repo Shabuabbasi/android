@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Background Gradient Colors -->
+    <color name="va_bg_gradient_start">#E6F4F1</color>
+    <color name="va_bg_gradient_end">#FFFFFF</color>
+
+    <!-- Text Colors -->
+    <color name="va_text_primary">#4A5568</color>
+    <color name="va_text_secondary">#718096</color>
+
+    <!-- Accent Colors -->
+    <color name="va_accent_blue">#66A3E0</color>
+    <color name="va_accent_light_blue">#A5D8F3</color>
+    <color name="va_ai_bubble_bg">#F0FDF4</color>
+    <color name="va_ai_badge_bg">#81C7A5</color>
+
+    <!-- Waveform Colors -->
+    <color name="va_waveform_light">#D4E5FA</color>
+    <color name="va_waveform_dark">#9AC3F5</color>
+
+    <!-- Option List Colors -->
+    <color name="va_option_bg">#FCFEFC</color>
+    <color name="va_option_icon_bg_green">#E6F4EA</color>
+    <color name="va_option_icon_bg_blue">#E8F0FE</color>
+    <color name="va_option_icon_bg_yellow">#FFF8E1</color>
+</resources>
