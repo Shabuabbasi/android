@@ -21,7 +21,7 @@ class PersonalChatbotS1Activity : AppCompatActivity() {
     private val messages = mutableListOf<ChatMessage>()
 
     companion object {
-        // API key injected into BuildConfig from Gradle (local.properties or env)
+        //API key injected into BuildConfig from Gradle (local.properties or env)
         private val API_KEY: String = try { BuildConfig.GROQ_API_KEY } catch (e: Exception) { "" }
     }
 
