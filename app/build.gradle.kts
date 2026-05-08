@@ -109,8 +109,8 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    // Picovoice Porcupine for wake word detection
-    implementation("ai.picovoice:porcupine-android:3.0.2")
+    // Picovoice Porcupine removed — wake-word disabled when not using Picovoice
+    // implementation("ai.picovoice:porcupine-android:3.0.2")
 
     // Lifecycle for proper activity lifecycle management
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")

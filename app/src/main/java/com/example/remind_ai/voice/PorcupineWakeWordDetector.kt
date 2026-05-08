@@ -7,7 +7,6 @@ import android.media.MediaRecorder
 import android.util.Log
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import ai.picovoice.porcupine.Porcupine
 
 /**
  * Wrapper for Picovoice Porcupine wake word detection
@@ -36,11 +35,10 @@ class PorcupineWakeWordDetector(
         private const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
     }
 
-    private var porcupine: Porcupine? = null
-    private var audioRecord: AudioRecord? = null
+    // Picovoice removed: this detector is a no-op stub when Picovoice is not used.
     private var isListening = false
     private val scope = MainScope()
-    private var audioThread: Thread? = null
+    private var disabled = true
 
     /**
      * Initialize Porcupine with custom wake word
@@ -48,16 +46,10 @@ class PorcupineWakeWordDetector(
      */
     fun initialize() {
         try {
-            // Build Porcupine with custom wake word model
-            // Using the "Hey Assistant" wake word
-            porcupine = Porcupine.Builder()
-                .setAccessKey(accessKey)
-                .setKeywords(arrayOf(Porcupine.BuiltInKeyword.COMPUTER)) // Fallback to built-in keyword
-                // For custom "Hey Assistant" wake word, use:
-                // .setKeywordPaths(arrayOf(context.assets.openFd("models/hey_assistant.ppn").fileDescriptor))
-                .build(context)
-
-            Log.d(TAG, "Porcupine initialized successfully")
+            // Since Picovoice dependency has been removed, keep detector disabled.
+            disabled = true
+            Log.w(TAG, "Porcupine wake-word detector disabled (Picovoice not available)")
+            onError("Wake-word detector disabled (Picovoice not available)")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize Porcupine", e)
             onError("Failed to initialize wake word detector: ${e.message}")
@@ -75,41 +67,10 @@ class PorcupineWakeWordDetector(
         }
 
         try {
-            if (porcupine == null) {
-                initialize()
-            }
-
-            // Initialize AudioRecord
-            val bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT)
-            audioRecord = AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                SAMPLE_RATE,
-                CHANNEL_CONFIG,
-                AUDIO_FORMAT,
-                bufferSize
-            )
-
-            if (audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
-                onError("Failed to initialize AudioRecord")
-                return
-            }
-
-            audioRecord?.startRecording()
-            isListening = true
-
-            // Start background thread for wake word detection
-            audioThread = Thread {
-                try {
-                    processAudioFrames()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error in audio processing thread", e)
-                    onError("Error in wake word detection: ${e.message}")
-                }
-            }.apply {
-                start()
-            }
-
-            Log.d(TAG, "Wake word detection started")
+            // Detector disabled — do not access microphone.
+            Log.w(TAG, "Wake-word detector disabled; startListening() no-op")
+            onError("Wake-word detector disabled; not listening")
+            return
 
         } catch (e: Exception) {
             Log.e(TAG, "Error starting listening", e)
@@ -122,21 +83,9 @@ class PorcupineWakeWordDetector(
      * Stop listening for wake word
      */
     fun stopListening() {
+        // No-op for disabled detector
         isListening = false
-
-        try {
-            audioRecord?.stop()
-            audioRecord?.release()
-            audioRecord = null
-
-            audioThread?.interrupt()
-            audioThread?.join(1000)
-            audioThread = null
-
-            Log.d(TAG, "Wake word detection stopped")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error stopping listening", e)
-        }
+        Log.d(TAG, "stopListening() called on disabled wake-word detector")
     }
 
     /**
@@ -144,37 +93,7 @@ class PorcupineWakeWordDetector(
      * This runs on a background thread
      */
     private fun processAudioFrames() {
-        val frame = ShortArray(FRAME_LENGTH)
-        
-        while (isListening && audioRecord != null) {
-            try {
-                val numRead = audioRecord!!.read(frame, 0, frame.size)
-                
-                if (numRead == FRAME_LENGTH) {
-                    // Process frame with Porcupine
-                    val keywordIndex = porcupine?.process(frame) ?: -1
-                    
-                    // Check if any keyword was detected
-                    if (keywordIndex >= 0) {
-                        Log.d(TAG, "Wake word detected!")
-                        isListening = false
-                        
-                        // Callback on main thread
-                        scope.launch {
-                            onWakeWordDetected()
-                        }
-                        
-                        // Stop listening after detection
-                        stopListening()
-                        break
-                    }
-                }
-            } catch (e: Exception) {
-                if (isListening) {
-                    Log.e(TAG, "Error processing audio frame", e)
-                }
-            }
-        }
+        // No processing — Picovoice removed
     }
 
     /**
@@ -184,11 +103,7 @@ class PorcupineWakeWordDetector(
     fun cleanup() {
         try {
             stopListening()
-            
-            porcupine?.delete()
-            porcupine = null
-
-            Log.d(TAG, "Porcupine cleaned up")
+            Log.d(TAG, "Porcupine wake-word detector cleanup (no-op)")
         } catch (e: Exception) {
             Log.e(TAG, "Error during cleanup", e)
         }
