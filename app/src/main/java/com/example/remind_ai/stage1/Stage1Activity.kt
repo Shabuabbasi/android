@@ -130,12 +130,31 @@ class Stage1Activity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun setupSpeechRecognizer() {
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        val recognizerIntent = Intent(android.speech.RecognitionService.SERVICE_INTERFACE)
+        recognizerIntent.setPackage("com.google.android.googlequicksearchbox")
+        val services = packageManager.queryIntentServices(recognizerIntent, 0)
+
+        if (services.isEmpty()) {
+            if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+                Toast.makeText(this, "Speech recognition not available", Toast.LENGTH_SHORT).show()
+                return
+            }
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        } else {
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(
+                this,
+                android.content.ComponentName(
+                    "com.google.android.googlequicksearchbox",
+                    "com.google.android.voicesearch.serviceapi.GoogleRecognitionService"
+                )
+            )
+        }
 
         speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra("android.speech.extra.DICTATION_MODE", true)
         }
 
         speechRecognizer.setRecognitionListener(object : RecognitionListener {

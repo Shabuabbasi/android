@@ -8,13 +8,16 @@ import android.util.Log
 import android.widget.Toast
 import com.example.remind_ai.model.ReminderModel
 import com.example.remind_ai.stage1.ReminderReceiver
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
+import java.util.UUID
 
 /**
  * Manager class for all reminder-related voice operations
@@ -31,6 +34,7 @@ class ReminderVoiceManager(private val context: Context) {
     }
 
     private val database = FirebaseDatabase.getInstance().reference
+    private val auth = FirebaseAuth.getInstance()
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     /**
@@ -68,7 +72,8 @@ class ReminderVoiceManager(private val context: Context) {
             }
 
             // Generate unique reminder ID
-            val reminderId = database.child("reminders").push().key ?: return
+            val uid = auth.currentUser?.uid ?: "global"
+            val reminderId = database.child("reminders").child(uid).push().key ?: return
 
             // Create reminder model
             val reminder = ReminderModel(
@@ -82,9 +87,9 @@ class ReminderVoiceManager(private val context: Context) {
             )
 
             // Save to Firebase
-            database.child("reminders").child(reminderId).setValue(reminder)
+            database.child("reminders").child(uid).child(reminderId).setValue(reminder)
                 .addOnSuccessListener {
-                    Log.d(TAG, "Reminder saved: ${reminder.title} at ${reminder.time}")
+                    Log.i(TAG, "Reminder saved: ${reminder.title} at ${reminder.time}")
                     
                     // Set alarm for the reminder
                     setReminderAlarm(reminder)
@@ -112,7 +117,8 @@ class ReminderVoiceManager(private val context: Context) {
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        database.child("reminders")
+        val uid = auth.currentUser?.uid ?: "global"
+        database.child("reminders").child(uid)
             .orderByChild("timestamp")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -171,8 +177,9 @@ class ReminderVoiceManager(private val context: Context) {
     private fun setReminderAlarm(reminder: ReminderModel) {
         try {
             val intent = Intent(context, ReminderReceiver::class.java).apply {
-                putExtra("reminder_title", reminder.title)
-                putExtra("reminder_id", reminder.id)
+                putExtra("title", reminder.title)
+                putExtra("notes", reminder.notes)
+                putExtra("id", reminder.id)
             }
 
             val pendingIntent = PendingIntent.getBroadcast(
@@ -188,11 +195,53 @@ class ReminderVoiceManager(private val context: Context) {
                 pendingIntent
             )
 
-            Log.d(TAG, "Alarm set for reminder: ${reminder.title}")
+            Log.i(TAG, "Alarm set for reminder: ${reminder.title}")
 
         } catch (e: Exception) {
             Log.e(TAG, "Error setting alarm", e)
         }
+    }
+
+    /**
+     * Save a quick thought to Firebase
+     * @param text The thought text
+     * @param onSuccess Callback when saved
+     * @param onError Callback on error
+     */
+    fun saveQuickThought(
+        text: String,
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            onError("User not logged in")
+            return
+        }
+
+        if (text.isEmpty()) {
+            onError("Thought text is empty")
+            return
+        }
+
+        val thoughtId = UUID.randomUUID().toString()
+        val currentTime = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
+
+        val thoughtData = hashMapOf(
+            "id" to thoughtId,
+            "text" to text,
+            "createdAt" to System.currentTimeMillis(),
+            "formattedTime" to currentTime
+        )
+
+        database.child("quick_thoughts").child(uid).child(thoughtId).setValue(thoughtData)
+            .addOnSuccessListener {
+                onSuccess("Thought saved successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error saving thought", e)
+                onError("Failed to save thought: ${e.message}")
+            }
     }
 
     /**
