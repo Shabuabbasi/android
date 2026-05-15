@@ -13,6 +13,15 @@ class ReminderReceiver : BroadcastReceiver() {
         val title = intent.getStringExtra("title") ?: "Reminder"
         val notes = intent.getStringExtra("notes") ?: "You have a reminder."
 
+        // Play alarm sound and show full screen activity for dementia patients
+        val alarmIntent = Intent(context, ReminderAlarmActivity::class.java).apply {
+            putExtra("title", title)
+            putExtra("notes", notes)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        context.startActivity(alarmIntent)
+
+        // Also show a standard notification as a backup
         val openIntent = Intent(context, Stage1Activity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             context,
@@ -27,6 +36,7 @@ class ReminderReceiver : BroadcastReceiver() {
             .setContentText(notes.ifEmpty { "It's time for your reminder." })
             .setStyle(NotificationCompat.BigTextStyle().bigText(notes.ifEmpty { "It's time for your reminder." }))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .build()

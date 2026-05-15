@@ -100,6 +100,13 @@
 
 
 
+        <activity
+            android:name=".stage1.ReminderAlarmActivity"
+            android:exported="false"
+            android:showOnLockScreen="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
     </application>
 
 </manifest>

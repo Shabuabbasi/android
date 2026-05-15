@@ -23,6 +23,9 @@ import com.google.firebase.database.FirebaseDatabase
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import android.util.Log
+import androidx.recyclerview.widget.RecyclerView
+import com.example.remind_ai.adapter.ReminderAdapter
 
 class AddReminderS1Activity : AppCompatActivity() {
 
@@ -33,9 +36,13 @@ class AddReminderS1Activity : AppCompatActivity() {
     private lateinit var spinnerRepeat: Spinner
     private lateinit var etNotes: EditText
     private lateinit var btnSave: Button
+    private lateinit var rvReminders: RecyclerView
+    private lateinit var reminderAdapter: ReminderAdapter
 
     private val calendar = Calendar.getInstance()
+    private val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance().reference
+    private val remindersList = mutableListOf<ReminderModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,11 +55,53 @@ class AddReminderS1Activity : AppCompatActivity() {
         spinnerRepeat = findViewById(R.id.spinnerRepeat)
         etNotes = findViewById(R.id.etNotes)
         btnSave = findViewById(R.id.btnSave)
+        rvReminders = findViewById(R.id.rvReminders)
 
+        setupRecyclerView()
         createNotificationChannel()
         setupRepeatSpinner()
         setupListeners()
         applyVoiceReminderData()
+        loadReminders()
+    }
+
+    private fun setupRecyclerView() {
+        reminderAdapter = ReminderAdapter(remindersList) { reminder ->
+            deleteReminder(reminder)
+        }
+        rvReminders.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        rvReminders.adapter = reminderAdapter
+    }
+
+    private fun loadReminders() {
+        val uid = auth.currentUser?.uid ?: "global"
+        Log.i("AddReminder", "Loading reminders for UID: $uid")
+        database.child("reminders").child(uid).addValueEventListener(object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                remindersList.clear()
+                for (child in snapshot.children) {
+                    val reminder = child.getValue(ReminderModel::class.java)
+                    if (reminder != null) {
+                        remindersList.add(reminder)
+                    }
+                }
+                // Sort by timestamp
+                remindersList.sortBy { it.timestamp }
+                reminderAdapter.updateData(remindersList)
+            }
+
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                Log.e("AddReminder", "Failed to load reminders", error.toException())
+            }
+        })
+    }
+
+    private fun deleteReminder(reminder: ReminderModel) {
+        val uid = auth.currentUser?.uid ?: "global"
+        database.child("reminders").child(uid).child(reminder.id).removeValue()
+            .addOnSuccessListener {
+                Toast.makeText(this, "Reminder deleted", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun setupRepeatSpinner() {
@@ -185,7 +234,8 @@ class AddReminderS1Activity : AppCompatActivity() {
             return
         }
 
-        val reminderId = database.child("reminders").push().key ?: return
+        val uid = auth.currentUser?.uid ?: "global"
+        val reminderId = database.child("reminders").child(uid).push().key ?: return
 
         val reminder = ReminderModel(
             id = reminderId,
@@ -198,11 +248,13 @@ class AddReminderS1Activity : AppCompatActivity() {
         )
 
         btnSave.isEnabled = false
-        database.child("reminders").child(reminderId).setValue(reminder)
+        database.child("reminders").child(uid).child(reminderId).setValue(reminder)
             .addOnSuccessListener {
                 scheduleNotification(reminder)
                 Toast.makeText(this, "Reminder saved successfully", Toast.LENGTH_SHORT).show()
-                finish()
+                etReminderTitle.text.clear()
+                etNotes.text.clear()
+                btnSave.isEnabled = true
             }
             .addOnFailureListener {
                 btnSave.isEnabled = true

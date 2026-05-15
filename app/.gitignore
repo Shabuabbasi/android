@@ -1,1 +1,9 @@
 /build
+/release-key.jks
+/app/release-key.jks
+/keystore.properties
+/local.properties
+/app/local.properties
+/app/keystore.properties
+
+
